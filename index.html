@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <!-- 匯入 CesiumJS 的 JavaScript 和 CSS 檔案 -->
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+
+    <style>
+        body,
+        html {
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #toolbar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 5px;
+            border-radius: 5px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div id="toolbar">
+        圖層: <br>
+        <div id="layers"></div>
+    </div>
+
+    <div id="cesiumContainer"></div>
+
+    <script src="token.js"></script>
+    <script type="module">
+
+        // 設定 Cesium Ion 的預設存取令牌
+        Cesium.Ion.defaultAccessToken = api_token;
+
+        // 初始化 Cesium Viewer
+        const viewer = new Cesium.Viewer('cesiumContainer');
+
+        // 設定相機的初始視角
+        viewer.scene.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(120.5, 24.9, 2000000),
+            orientation: {
+                heading: 0,
+            },
+        });
+
+        // 函式用來設定圖層
+        const setLayers = (layers) => {
+            let layers_control = document.getElementById('layers')
+            layers.forEach(layer => {
+
+                layers_control = document.getElementById('layers')
+
+                // 建立圖層名稱的元素
+                const layer_name = document.createElement('span');
+                layer_name.textContent = layer.name;
+                layers_control.appendChild(layer_name);
+
+                // 建立圖層勾選框元素
+                const layer_chx = document.createElement('input');
+                layer_chx.type = "checkbox"
+                layer_chx.id = "layer_" + layer.name;
+                layers_control.appendChild(layer_chx);
+
+                // 換行元素
+                const br = document.createElement('br');
+                layers_control.appendChild(br);
+
+                let data = null
+
+                // 根據圖層的 URL 副檔名來決定載入的資料類型
+                if (layer.url.toLowerCase().endsWith('czml')) {
+                    data = new Cesium.CzmlDataSource(layer.name)
+                }
+                else if (layer.url.toLowerCase().endsWith('kml')) {
+                    data = new Cesium.KmlDataSource(layer.name)
+                }
+
+                // 載入資料並設定初始顯示狀態為隱藏
+                data.load(layer.url)
+                data.show = false;
+                viewer.dataSources.add(data);
+
+                // 監聽勾選框的變化，控制圖層的顯示狀態
+                document.getElementById('layer_' + layer.name).addEventListener('change',
+                    function () {
+                        data.show = this.checked;
+                    }
+                );
+            });
+        }
+
+        // 呼叫 setLayers 函式設定圖層
+        setLayers([
+            { name: 'TW_ADIZ', url: "./Data/TW_ADIZ.kml" },
+            { name: 'AIS', url: "./Data/CurrentAIS.czml" },
+            { name: 'ADSB', url: "./Data/CurrentADSB.czml" }
+        ])
+
+    </script>
+
+    </div>
+</body>
+
+</html>
